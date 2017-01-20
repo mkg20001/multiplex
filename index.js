@@ -127,6 +127,7 @@ var Multiplex = function (opts, onchannel) {
     opts = null
   }
   if (!opts) opts = {}
+  if (onchannel) this.on('stream', onchannel)
 
   this.destroyed = false
   this.limit = opts.limit || 0
@@ -138,7 +139,6 @@ var Multiplex = function (opts, onchannel) {
   this._remote = []
   this._list = this._local
   this._receiving = null
-  this._onchannel = onchannel
   this._chunked = false
   this._state = 0
   this._type = 0
@@ -295,9 +295,9 @@ Multiplex.prototype._push = function (data) {
       channel = this._receiving[name]
       delete this._receiving[name]
       this._addChannel(channel, this._channel, this._list)
-    } else if (this._onchannel) {
+    } else {
       channel = new Channel(name, this, this._options)
-      this._onchannel(this._addChannel(channel, this._channel, this._list), channel.name)
+      this.emit('stream', this._addChannel(channel, this._channel, this._list), channel.name)
     }
     return
   }
@@ -407,10 +407,21 @@ Multiplex.prototype.finalize = function () {
 
 Multiplex.prototype.destroy = function (err) {
   if (this.destroyed) return
+
+  var list = this._local.concat(this._remote)
+
   this.destroyed = true
-  this._clear()
+
   if (err) this.emit('error', err)
   this.emit('close')
+
+  list.forEach(function (stream) {
+    if (stream) {
+      stream.emit('error', err || new Error('underlying socket has been closed'))
+    }
+  })
+
+  this._clear()
 }
 
 module.exports = Multiplex
