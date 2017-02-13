@@ -288,8 +288,95 @@ test('if onstream is not passed, stream is emitted', function (t) {
   stream.on('data', function (data) {
     t.same(data, new Buffer('hello world'))
     stream.end()
+    setTimeout(() => t.end(), 1000)
+  })
+})
+
+test('half close a muxed stream', function (t) {
+  var plex1 = multiplex()
+  var plex2 = multiplex()
+
+  plex1.pipe(plex2)
+       .pipe(plex1)
+
+  plex2.on('stream', function (stream, id) {
+    t.ok(stream, 'received stream')
+    t.ok(id, 'has id2')
+
+    // let it flow
+    stream.on('data', function () {})
+
+    stream.on('end', function () {
+      t.end()
+    })
+
+    stream.on('error', function (err) {
+      t.notOk(err)
+    })
+
+    stream.write(new Buffer('hello world'))
+
+    stream.end()
+  })
+
+  var stream = plex1.createStream()
+
+  stream.on('data', function (data) {
+    t.same(data, new Buffer('hello world'))
+  })
+
+  stream.on('error', function (err) {
+    t.notOk(err)
+  })
+
+  stream.on('end', function () {
+    stream.end()
+  })
+})
+
+test('half close a half closed muxed stream', function (t) {
+  var plex1 = multiplex()
+  var plex2 = multiplex()
+
+  plex1.nameTag = 'plex1:'
+  plex2.nameTag = 'plex2:'
+
+  plex1.pipe(plex2)
+       .pipe(plex1)
+
+  plex2.on('stream', function (stream, id) {
+    t.ok(stream, 'received stream')
+    t.ok(id, 'has id2')
+
+    stream.on('data', function (data) {
+      t.same(data, new Buffer('some data'))
+    })
+
+    stream.on('end', function () {
+      stream.write(new Buffer('hello world'))
+      stream.end()
+    })
+
+    stream.on('error', function (err) { t.notOk(err) })
+  })
+
+  var stream = plex1.createStream()
+
+  stream.on('data', function (data) {
+    t.same(data, new Buffer('hello world'))
+  })
+
+  stream.on('error', function (err) {
+    t.notOk(err)
+  })
+
+  stream.on('end', function () {
     t.end()
   })
+
+  stream.write(new Buffer('some data'))
+
+  stream.end()
 })
 
 test('underlying error is propagated to muxed streams', function (t) {
