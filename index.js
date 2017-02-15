@@ -333,11 +333,11 @@ Multiplex.prototype._push = function (data) {
     return
   }
 
-  var stream = this._list[this._channel]
+  var stream = this._list[this._channel] ||
+    this._remote[this._channel] ||
+    this._local[this._channel]
 
-  if (!stream) {
-    return
-  }
+  if (!stream) { return }
 
   switch (this._type) {
     case 5: // local error
