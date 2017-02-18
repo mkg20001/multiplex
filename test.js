@@ -1,17 +1,20 @@
+'use strict'
+require('babel-register')
+
 var test = require('tape')
 var concat = require('concat-stream')
 var through = require('through2')
-var multiplex = require('./')
+var Multiplex = require('./')
 var net = require('net')
 var chunky = require('chunky')
 var pump = require('pump')
 
 test('one way piping work with 2 sub-streams', function (t) {
-  var plex1 = multiplex()
+  var plex1 = new Multiplex()
   var stream1 = plex1.createStream()
   var stream2 = plex1.createStream()
 
-  var plex2 = multiplex(function onStream (stream, id) {
+  var plex2 = new Multiplex(function onStream (stream, id) {
     stream.pipe(collect())
   })
 
@@ -39,9 +42,9 @@ test('one way piping work with 2 sub-streams', function (t) {
 })
 
 test('two way piping works with 2 sub-streams', function (t) {
-  var plex1 = multiplex()
+  var plex1 = new Multiplex()
 
-  var plex2 = multiplex(function onStream (stream, id) {
+  var plex2 = new Multiplex(function onStream (stream, id) {
     var uppercaser = through(function (chunk, e, done) {
       this.push(new Buffer(chunk.toString().toUpperCase()))
       this.end()
@@ -78,11 +81,11 @@ test('two way piping works with 2 sub-streams', function (t) {
 })
 
 test('stream id should be exposed as stream.name', function (t) {
-  var plex1 = multiplex()
+  var plex1 = new Multiplex()
   var stream1 = plex1.createStream('5')
   t.equal(stream1.name, '5')
 
-  var plex2 = multiplex(function onStream (stream, id) {
+  var plex2 = new Multiplex(function onStream (stream, id) {
     t.equal(stream.name, '5')
     t.equal(id, '5')
     t.end()
@@ -95,11 +98,11 @@ test('stream id should be exposed as stream.name', function (t) {
 })
 
 test('stream id can be a long string', function (t) {
-  var plex1 = multiplex()
+  var plex1 = new Multiplex()
   var stream1 = plex1.createStream('hello-yes-this-is-dog')
   t.equal(stream1.name, 'hello-yes-this-is-dog')
 
-  var plex2 = multiplex(function onStream (stream, id) {
+  var plex2 = new Multiplex(function onStream (stream, id) {
     t.equal(stream.name, 'hello-yes-this-is-dog')
     t.equal(id, 'hello-yes-this-is-dog')
     t.end()
@@ -112,10 +115,10 @@ test('stream id can be a long string', function (t) {
 })
 
 test('destroy', function (t) {
-  var plex1 = multiplex()
+  var plex1 = new Multiplex()
   var stream1 = plex1.createStream()
 
-  var plex2 = multiplex(function onStream (stream, id) {
+  var plex2 = new Multiplex(function onStream (stream, id) {
     stream.on('error', function (err) {
       t.equal(err.message, '0 had an error')
       t.end()
@@ -129,7 +132,7 @@ test('destroy', function (t) {
 })
 
 test('testing invalid data error', function (t) {
-  var plex = multiplex()
+  var plex = new Multiplex()
 
   plex.on('error', function (err) {
     if (err) {
@@ -143,8 +146,8 @@ test('testing invalid data error', function (t) {
 
 test('overflow', function (t) {
   t.plan(2)
-  var plex1 = multiplex()
-  var plex2 = multiplex({limit: 10})
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex({limit: 10})
 
   plex2.on('stream', function (stream) {
     stream.on('error', function (err) {
@@ -166,8 +169,8 @@ test('overflow', function (t) {
 })
 
 test('2 buffers packed into 1 chunk', function (t) {
-  var plex1 = multiplex()
-  var plex2 = multiplex(function (b) {
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex(function (b) {
     b.pipe(concat(function (body) {
       t.equal(body.toString('utf8'), 'abc\n123\n')
       t.end()
@@ -196,11 +199,11 @@ test('chunks', function (t) {
       if (--times === 0) t.end()
       else chunk()
     })
-    var plex1 = multiplex()
+    var plex1 = new Multiplex()
     var stream1 = plex1.createStream()
     var stream2 = plex1.createStream()
 
-    var plex2 = multiplex(function onStream (stream, id) {
+    var plex2 = new Multiplex(function onStream (stream, id) {
       stream.pipe(collect())
     })
 
@@ -235,7 +238,7 @@ test('chunks', function (t) {
 })
 
 test('prefinish + corking', function (t) {
-  var plex = multiplex()
+  var plex = new Multiplex()
   var async = false
 
   plex.on('prefinish', function () {
@@ -255,8 +258,8 @@ test('prefinish + corking', function (t) {
 })
 
 test('quick message', function (t) {
-  var plex2 = multiplex()
-  var plex1 = multiplex(function (stream) {
+  var plex2 = new Multiplex()
+  var plex1 = new Multiplex(function (stream) {
     stream.write('hello world')
   })
 
@@ -272,8 +275,8 @@ test('quick message', function (t) {
 })
 
 test('if onstream is not passed, stream is emitted', function (t) {
-  var plex1 = multiplex()
-  var plex2 = multiplex()
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex()
 
   plex1.pipe(plex2).pipe(plex1)
 
@@ -293,8 +296,8 @@ test('if onstream is not passed, stream is emitted', function (t) {
 })
 
 test('half close a muxed stream', function (t) {
-  var plex1 = multiplex()
-  var plex2 = multiplex()
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex()
 
   plex1.pipe(plex2)
        .pipe(plex1)
@@ -335,8 +338,8 @@ test('half close a muxed stream', function (t) {
 })
 
 test('half close a half closed muxed stream', function (t) {
-  var plex1 = multiplex()
-  var plex2 = multiplex()
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex()
 
   plex1.nameTag = 'plex1:'
   plex2.nameTag = 'plex2:'
@@ -381,8 +384,8 @@ test('half close a half closed muxed stream', function (t) {
 
 test('underlying error is propagated to muxed streams', function (t) {
   t.plan(4)
-  var plex1 = multiplex()
-  var plex2 = multiplex()
+  var plex1 = new Multiplex()
+  var plex2 = new Multiplex()
 
   var socket
 
@@ -422,4 +425,3 @@ test('underlying error is propagated to muxed streams', function (t) {
     pump(socket, plex1)
   })
 })
-

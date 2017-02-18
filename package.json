@@ -2,9 +2,10 @@
   "name": "multiplex",
   "version": "6.7.0",
   "description": "A binary stream multiplexer. Stream multiple streams of binary data over a single binary stream.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "lint": "standard"
   },
   "contributors": [
     "Max Ogden <max@maxogden.com> (https://github.com/maxogden)",
@@ -13,6 +14,7 @@
   "author": "max ogden",
   "license": "BSD 2-Clause",
   "dependencies": {
+    "debug": "^2.6.1",
     "duplexify": "^3.4.2",
     "inherits": "^2.0.1",
     "readable-stream": "^2.0.2",
@@ -20,9 +22,13 @@
     "xtend": "^4.0.0"
   },
   "devDependencies": {
+    "babel-eslint": "^7.1.1",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
+    "babel-register": "^6.23.0",
     "chunky": "0.0.0",
     "concat-stream": "^1.4.8",
     "pump": "^1.0.2",
+    "standard": "^8.6.0",
     "tape": "^4.0.0",
     "through2": "^0.6.5"
   },
@@ -33,5 +39,8 @@
   "bugs": {
     "url": "https://github.com/maxogden/multiplex/issues"
   },
-  "homepage": "https://github.com/maxogden/multiplex"
+  "homepage": "https://github.com/maxogden/multiplex",
+  "standard": {
+    "parser": "babel-eslint"
+  }
 }
