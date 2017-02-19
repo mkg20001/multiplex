@@ -338,8 +338,8 @@ test('half close a muxed stream', function (t) {
 })
 
 test('half close a half closed muxed stream', function (t) {
-  var plex1 = new Multiplex()
-  var plex2 = new Multiplex()
+  var plex1 = new Multiplex({halfOpen: true})
+  var plex2 = new Multiplex({halfOpen: true})
 
   plex1.nameTag = 'plex1:'
   plex2.nameTag = 'plex2:'

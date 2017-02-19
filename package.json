@@ -16,10 +16,8 @@
   "dependencies": {
     "debug": "^2.6.1",
     "duplexify": "^3.4.2",
-    "inherits": "^2.0.1",
     "readable-stream": "^2.0.2",
-    "varint": "^4.0.0",
-    "xtend": "^4.0.0"
+    "varint": "^4.0.0"
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",

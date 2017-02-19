@@ -14,14 +14,17 @@ export type ChannelOpts = {
 
 class Channel extends stream.Duplex {
   constructor (name: Buffer | string, plex: Multiplex, opts: ChannelOpts = {}) {
-    super()
+    const halfOpen = Boolean(opts.halfOpen)
+    super({
+      allowHalfOpen: halfOpen
+    })
 
     this.name = name
-    this.log = debug('mplex:channel:' + name.toString())
+    this.log = debug('mplex:channel: %s', name)
     this.channel = 0
     this.initiator = false
-    this.chunked = !!opts.chunked
-    this.halfOpen = !!opts.halfOpen
+    this.chunked = Boolean(opts.chunked)
+    this.halfOpen = halfOpen
     this.destroyed = false
     this.finalized = false
 
@@ -29,12 +32,14 @@ class Channel extends stream.Duplex {
     this._dataHeader = 0
     this._opened = false
     this._awaitDrain = 0
-    this._lazy = !!opts.lazy
+    this._lazy = Boolean(opts.lazy)
 
     let finished = false
     let ended = false
+    this.log('open, halfOpen: ' + this.halfOpen)
 
     this.once('end', () => {
+      this.log('end')
       this._read() // trigger drain
 
       if (this.destroyed) {
@@ -73,8 +78,6 @@ class Channel extends stream.Duplex {
         this._finalize()
       }
     })
-
-    this.log('new')
   }
 
   destroy (err: Error) {

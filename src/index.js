@@ -2,7 +2,6 @@
 
 const stream = require('readable-stream')
 const varint = require('varint')
-const xtend = require('xtend')
 const duplexify = require('duplexify')
 const log = require('debug')('mplex')
 
@@ -25,7 +24,7 @@ type ChannelCallback = (Channel) => void
 class Multiplex extends stream.Duplex {
   constructor (opts?: MultiplexOpts | ChannelCallback, onchannel?: ChannelCallback) {
     super()
-    console.log('MULTIPLEX STARTING')
+    log('construction')
     if (typeof opts === 'function') {
       onchannel = opts
       opts = {}
@@ -44,7 +43,7 @@ class Multiplex extends stream.Duplex {
 
     this._corked = 0
     this._options = opts
-    this._binaryName = !!opts.binaryName
+    this._binaryName = Boolean(opts.binaryName)
     this._local = []
     this._remote = []
     this._list = this._local
@@ -81,14 +80,10 @@ class Multiplex extends stream.Duplex {
       id = this._local.push(null) - 1
     }
     let channelName = this._name(name || id.toString())
-    log('createStream: ' + channelName.toString())
+    const options = Object.assign(this._options, opts)
+    log('createStream: %s', channelName.toString(), options)
 
-    const channel = new Channel(
-      channelName,
-      this,
-      xtend(this._options, opts)
-    )
-
+    const channel = new Channel(channelName, this, options)
     return this._addChannel(channel, id, this._local)
   }
 
@@ -106,7 +101,7 @@ class Multiplex extends stream.Duplex {
     const channel = new Channel(
       channelName,
       this,
-      xtend(this._options, opts)
+      Object.assign(this._options, opts)
     )
 
     if (!this._receiving) {
@@ -124,7 +119,7 @@ class Multiplex extends stream.Duplex {
 
   createSharedStream (name: Buffer | string, opts: ChannelOpts): stream.Duplex {
     log('createSharedStream')
-    return duplexify(this.createStream(name, xtend(opts, {lazy: true})), this.receiveStream(name, opts))
+    return duplexify(this.createStream(name, Object.assign(opts, {lazy: true})), this.receiveStream(name, opts))
   }
 
   _name (name: Buffer | string): Buffer | string {
