@@ -66,19 +66,23 @@ class Multiplex extends stream.Duplex {
     this._ondrain = []
     this._finished = false
 
-    this.on('finish', this._clear)
+    this.once('finish', this._clear)
+    this._nextId = 0
   }
 
   createStream (name: Buffer | string, opts: ChannelOpts): Channel {
     if (this.destroyed) {
       throw new Error('Multiplexer is destroyed')
     }
+    console.log('local', this._local.length, this._nextId)
+    // let id = this._local.indexOf(null)
 
-    let id = this._local.indexOf(null)
+    // if (id === -1) {
+    //   id = this._local.push(null) - 1
+    // }
+    const id = this._nextId + 1
+    this._nextId += 2
 
-    if (id === -1) {
-      id = this._local.push(null) - 1
-    }
     let channelName = this._name(name || id.toString())
     const options = Object.assign(this._options, opts)
     log('createStream: %s', channelName.toString(), options)
@@ -163,6 +167,7 @@ class Multiplex extends stream.Duplex {
 
     list[id] = channel
     channel.on('finalize', () => {
+      log('_remove channel', id)
       list[id] = null
     })
     channel.open(id, list === this._local)
@@ -436,6 +441,8 @@ class Multiplex extends stream.Duplex {
         stream._destroy(null, false)
       }
     })
+
+    this._nextId = 0
 
     this.push(null)
   }
