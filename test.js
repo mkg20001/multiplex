@@ -425,3 +425,27 @@ test('underlying error is propagated to muxed streams', function (t) {
     pump(socket, plex1)
   })
 })
+
+test('_nextStreamId', function (t) {
+  var ini = new Multiplex({
+    initiator: true
+  })
+  var rec = new Multiplex({
+    initiator: false
+  })
+
+  t.equal(ini._nextStreamId(), 1)
+
+  ini._remote = new Array(10)
+  ini._local = new Array(5)
+
+  t.equal(ini._nextStreamId(), 11)
+
+  t.equal(rec._nextStreamId(), 0)
+
+  rec._remote = new Array(10)
+  rec._local = new Array(5)
+
+  t.equal(rec._nextStreamId(), 10)
+  t.end()
+})

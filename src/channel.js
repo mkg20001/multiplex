@@ -20,7 +20,7 @@ class Channel extends stream.Duplex {
     })
 
     this.name = name
-    this.log = debug('mplex:channel: %s', name)
+    this.log = debug('mplex:channel:' + this.name.toString())
     this.channel = 0
     this.initiator = false
     this.chunked = Boolean(opts.chunked)

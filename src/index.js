@@ -3,7 +3,7 @@
 const stream = require('readable-stream')
 const varint = require('varint')
 const duplexify = require('duplexify')
-const log = require('debug')('mplex')
+const debug = require('debug')
 
 const Channel = require('./channel')
 import type {ChannelOpts} from './channel'
@@ -16,7 +16,8 @@ let used = 0
 
 type MultiplexOpts = {
   binaryName?: bool,
-  limit?: number
+  limit?: number,
+  initiator?: bool
 }
 
 type ChannelCallback = (Channel) => void
@@ -24,7 +25,6 @@ type ChannelCallback = (Channel) => void
 class Multiplex extends stream.Duplex {
   constructor (opts?: MultiplexOpts | ChannelCallback, onchannel?: ChannelCallback) {
     super()
-    log('construction')
     if (typeof opts === 'function') {
       onchannel = opts
       opts = {}
@@ -40,6 +40,11 @@ class Multiplex extends stream.Duplex {
 
     this.destroyed = false
     this.limit = opts.limit || 0
+    if (opts.initiator == null) {
+      opts.initiator = true
+    }
+
+    this.initiator = opts.initiator
 
     this._corked = 0
     this._options = opts
@@ -55,6 +60,10 @@ class Multiplex extends stream.Duplex {
     this._missing = 0
     this._message = null
 
+    const init = this.initiator ? ':initiator' : ':listener'
+    this.log = debug('mplex:main:' + Math.floor(Math.random() * 100000) + init)
+    this.log('construction', new Error().stack)
+
     let bufSize = 100
     if (this.limit) {
       bufSize = varint.encodingLength(this.limit)
@@ -67,25 +76,30 @@ class Multiplex extends stream.Duplex {
     this._finished = false
 
     this.once('finish', this._clear)
-    this._nextId = 0
+  }
+
+  // Generate the next stream id based on the highest seen
+  // id so far. Initiator ids are always odd, receiver ids
+  // are always even.
+  _nextStreamId (): number {
+    let remoteMax = this._remote.length
+    let localMax = this._local.length
+    let id = Math.max(remoteMax, localMax)
+    if (this.initiator && id % 2 === 0) {
+      id++
+    }
+
+    return id
   }
 
   createStream (name: Buffer | string, opts: ChannelOpts): Channel {
     if (this.destroyed) {
       throw new Error('Multiplexer is destroyed')
     }
-    console.log('local', this._local.length, this._nextId)
-    // let id = this._local.indexOf(null)
-
-    // if (id === -1) {
-    //   id = this._local.push(null) - 1
-    // }
-    const id = this._nextId + 1
-    this._nextId += 2
-
+    const id = this._nextStreamId()
     let channelName = this._name(name || id.toString())
     const options = Object.assign(this._options, opts)
-    log('createStream: %s', channelName.toString(), options)
+    this.log('createStream: %s', id, channelName.toString(), options)
 
     const channel = new Channel(channelName, this, options)
     return this._addChannel(channel, id, this._local)
@@ -101,7 +115,7 @@ class Multiplex extends stream.Duplex {
     }
 
     const channelName = this._name(name)
-    log('receiveStream: ' + channelName.toString())
+    this.log('receiveStream: ' + channelName.toString())
     const channel = new Channel(
       channelName,
       this,
@@ -122,7 +136,7 @@ class Multiplex extends stream.Duplex {
   }
 
   createSharedStream (name: Buffer | string, opts: ChannelOpts): stream.Duplex {
-    log('createSharedStream')
+    this.log('createSharedStream')
     return duplexify(this.createStream(name, Object.assign(opts, {lazy: true})), this.receiveStream(name, opts))
   }
 
@@ -138,7 +152,7 @@ class Multiplex extends stream.Duplex {
     const oldUsed = used
     let drained = true
 
-    log('_send', header, len)
+    this.log('_send', header, len)
 
     varint.encode(header, pool, used)
     used += varint.encode.bytes
@@ -160,14 +174,14 @@ class Multiplex extends stream.Duplex {
   }
 
   _addChannel (channel: Channel, id: number, list: Array<Channel|null>): Channel {
-    log('_addChannel', id)
+    this.log('_addChannel', id)
     while (list.length <= id) {
       list.push(null)
     }
 
     list[id] = channel
     channel.on('finalize', () => {
-      log('_remove channel', id)
+      this.log('_remove channel', id)
       list[id] = null
     })
     channel.open(id, list === this._local)
@@ -249,7 +263,7 @@ class Multiplex extends stream.Duplex {
   }
 
   _push (data: Buffer) {
-    log('_push', data.length)
+    this.log('_push', data.length)
     if (!this._missing) {
       this._ptr = 0
       this._state = 0
@@ -257,6 +271,7 @@ class Multiplex extends stream.Duplex {
     }
 
     if (this._type === 0) { // open
+      this.log('open', this._channel)
       if (this.destroyed || this._finished) {
         return
       }
@@ -267,7 +282,7 @@ class Multiplex extends stream.Duplex {
       } else {
         name = data.toString() || this._channel.toString()
       }
-
+      this.log('open name', name)
       let channel
       if (this._receiving && this._receiving[name]) {
         channel = this._receiving[name]
@@ -329,7 +344,7 @@ class Multiplex extends stream.Duplex {
   }
 
   _write (data: Buffer, enc: string, cb: () => void) {
-    log('_write', data.length)
+    this.log('_write', data.length)
     if (this._finished) {
       cb()
       return
@@ -388,7 +403,7 @@ class Multiplex extends stream.Duplex {
   }
 
   end (data?: Buffer | () => void, enc?: string | () => void, cb?: () => void) {
-    log('end')
+    this.log('end')
     if (typeof data === 'function') {
       cb = data
       data = undefined
@@ -442,8 +457,6 @@ class Multiplex extends stream.Duplex {
       }
     })
 
-    this._nextId = 0
-
     this.push(null)
   }
 
@@ -452,9 +465,9 @@ class Multiplex extends stream.Duplex {
   }
 
   destroy (err?: Error) {
-    log('destroy')
+    this.log('destroy')
     if (this.destroyed) {
-      log('already destroyed')
+      this.log('already destroyed')
       return
     }
 
