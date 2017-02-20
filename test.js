@@ -1,5 +1,4 @@
 'use strict'
-require('babel-register')
 
 var test = require('tape')
 var concat = require('concat-stream')

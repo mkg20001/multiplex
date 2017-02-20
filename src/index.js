@@ -6,7 +6,7 @@ const duplexify = require('duplexify')
 const debug = require('debug')
 
 const Channel = require('./channel')
-import type {ChannelOpts} from './channel'
+/* :: import type {ChannelOpts} from './channel' */
 
 const SIGNAL_FLUSH = new Buffer([0])
 
@@ -14,6 +14,7 @@ const empty = new Buffer(0)
 let pool = new Buffer(10 * 1024)
 let used = 0
 
+/* ::
 type MultiplexOpts = {
   binaryName?: bool,
   limit?: number,
@@ -21,9 +22,10 @@ type MultiplexOpts = {
 }
 
 type ChannelCallback = (Channel) => void
+*/
 
 class Multiplex extends stream.Duplex {
-  constructor (opts?: MultiplexOpts | ChannelCallback, onchannel?: ChannelCallback) {
+  constructor (opts/* :: ?: MultiplexOpts | ChannelCallback */, onchannel /* :: ?: ChannelCallback */) {
     super()
     if (typeof opts === 'function') {
       onchannel = opts
@@ -81,7 +83,7 @@ class Multiplex extends stream.Duplex {
   // Generate the next stream id based on the highest seen
   // id so far. Initiator ids are always odd, receiver ids
   // are always even.
-  _nextStreamId (): number {
+  _nextStreamId ()/* : number */ {
     let remoteMax = this._remote.length
     let localMax = this._local.length
     let id = Math.max(remoteMax, localMax)
@@ -92,7 +94,7 @@ class Multiplex extends stream.Duplex {
     return id
   }
 
-  createStream (name: Buffer | string, opts: ChannelOpts): Channel {
+  createStream (name/* : Buffer | string */, opts/* : ChannelOpts */)/* : Channel */ {
     if (this.destroyed) {
       throw new Error('Multiplexer is destroyed')
     }
@@ -105,7 +107,7 @@ class Multiplex extends stream.Duplex {
     return this._addChannel(channel, id, this._local)
   }
 
-  receiveStream (name: Buffer | string, opts: ChannelOpts): Channel {
+  receiveStream (name/* : Buffer | string */, opts/* : ChannelOpts */)/* : Channel */ {
     if (this.destroyed) {
       throw new Error('Multiplexer is destroyed')
     }
@@ -135,19 +137,19 @@ class Multiplex extends stream.Duplex {
     return channel
   }
 
-  createSharedStream (name: Buffer | string, opts: ChannelOpts): stream.Duplex {
+  createSharedStream (name/* : Buffer | string */, opts/* : ChannelOpts */)/* : stream.Duplex */ {
     this.log('createSharedStream')
     return duplexify(this.createStream(name, Object.assign(opts, {lazy: true})), this.receiveStream(name, opts))
   }
 
-  _name (name: Buffer | string): Buffer | string {
+  _name (name/* : Buffer | string */)/* : Buffer | string */ {
     if (!this._binaryName) {
       return name.toString()
     }
     return Buffer.isBuffer(name) ? name : new Buffer(name)
   }
 
-  _send (header: number, data?: Buffer): bool {
+  _send (header/* : number */, data /* :: ?: Buffer */)/* : bool */ {
     const len = data ? data.length : 0
     const oldUsed = used
     let drained = true
@@ -173,7 +175,7 @@ class Multiplex extends stream.Duplex {
     return drained
   }
 
-  _addChannel (channel: Channel, id: number, list: Array<Channel|null>): Channel {
+  _addChannel (channel/* : Channel */, id/* : number */, list/* : Array<Channel|null> */)/* : Channel */ {
     this.log('_addChannel', id)
     while (list.length <= id) {
       list.push(null)
@@ -189,7 +191,7 @@ class Multiplex extends stream.Duplex {
     return channel
   }
 
-  _writeVarint (data: Buffer, offset: number): number {
+  _writeVarint (data/* : Buffer */, offset/* : number */)/* : number */ {
     for (offset; offset < data.length; offset++) {
       if (this._ptr === this._buf.length) {
         return this._lengthError(data)
@@ -225,12 +227,12 @@ class Multiplex extends stream.Duplex {
     return data.length
   }
 
-  _lengthError (data: Buffer): number {
+  _lengthError (data/* : Buffer */)/* : number */ {
     this.destroy(new Error('Incoming message is too big'))
     return data.length
   }
 
-  _writeMessage (data: Buffer, offset: number): number {
+  _writeMessage (data/* : Buffer */, offset/* : number */)/* : number */ {
     const free = data.length - offset
     const missing = this._missing
 
@@ -262,7 +264,7 @@ class Multiplex extends stream.Duplex {
     return data.length
   }
 
-  _push (data: Buffer) {
+  _push (data/* : Buffer */) {
     this.log('_push', data.length)
     if (!this._missing) {
       this._ptr = 0
@@ -328,7 +330,7 @@ class Multiplex extends stream.Duplex {
     }
   }
 
-  _onchanneldrain (drained: number) {
+  _onchanneldrain (drained/* : number */) {
     this._awaitChannelDrains -= drained
 
     if (this._awaitChannelDrains) {
@@ -343,7 +345,7 @@ class Multiplex extends stream.Duplex {
     }
   }
 
-  _write (data: Buffer, enc: string, cb: () => void) {
+  _write (data/* : Buffer */, enc/* : string */, cb/* : () => void */) {
     this.log('_write', data.length)
     if (this._finished) {
       cb()
@@ -380,7 +382,7 @@ class Multiplex extends stream.Duplex {
     }
   }
 
-  _finish (cb: () => void) {
+  _finish (cb/* : () => void */) {
     this._onuncork(() => {
       if (this._writableState.prefinished === false) {
         this._writableState.prefinished = true
@@ -402,7 +404,7 @@ class Multiplex extends stream.Duplex {
     }
   }
 
-  end (data?: Buffer | () => void, enc?: string | () => void, cb?: () => void) {
+  end (data/* :: ?: Buffer | () => void */, enc/* :: ?: string | () => void */, cb/* :: ?: () => void */) {
     this.log('end')
     if (typeof data === 'function') {
       cb = data
@@ -424,7 +426,7 @@ class Multiplex extends stream.Duplex {
     return stream.Writable.prototype.end.call(this, cb)
   }
 
-  _onuncork (fn: () => void) {
+  _onuncork (fn/* : () => void */) {
     if (this._corked) {
       this.once('uncork', fn)
       return
@@ -464,7 +466,7 @@ class Multiplex extends stream.Duplex {
     this._clear()
   }
 
-  destroy (err?: Error) {
+  destroy (err/* :: ?: Error */) {
     this.log('destroy')
     if (this.destroyed) {
       this.log('already destroyed')

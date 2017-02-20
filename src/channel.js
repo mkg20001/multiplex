@@ -4,16 +4,17 @@ const EventEmitter = require('events').EventEmitter
 const stream = require('readable-stream')
 const debug = require('debug')
 
-import type Multiplex from './index'
+/* :: import type Multiplex from './index'
 
 export type ChannelOpts = {
   chunked?: bool,
   halfOpen?: bool,
   lazy?: bool
 }
+*/
 
 class Channel extends stream.Duplex {
-  constructor (name: Buffer | string, plex: Multiplex, opts: ChannelOpts = {}) {
+  constructor (name/* : Buffer | string */, plex/* : Multiplex */, opts/* : ChannelOpts = {} */) {
     const halfOpen = Boolean(opts.halfOpen)
     super({
       allowHalfOpen: halfOpen
@@ -80,11 +81,11 @@ class Channel extends stream.Duplex {
     })
   }
 
-  destroy (err: Error) {
+  destroy (err/* : Error */) {
     this._destroy(err, true)
   }
 
-  _destroy (err: Error, local: bool) {
+  _destroy (err/* : Error */, local/* : bool */) {
     this.log('_destroy:' + (local ? 'local' : 'remote'))
     if (this.destroyed) {
       this.log('already destroyed')
@@ -127,7 +128,7 @@ class Channel extends stream.Duplex {
     this.emit('finalize')
   }
 
-  _write (data: Buffer, enc: string, cb: () => void) {
+  _write (data/* : Buffer */, enc/* : string */, cb/* : () => void */) {
     this.log('write: ', data.length)
     if (!this._opened) {
       this.once('open', () => {
@@ -178,7 +179,7 @@ class Channel extends stream.Duplex {
     this._multiplex._send(this.channel << 3 | 0, buf)
   }
 
-  open (channel: number, initiator: bool) {
+  open (channel/* : number */, initiator/* : bool */) {
     this.log('open: ' + channel)
     this.channel = channel
     this.initiator = initiator
