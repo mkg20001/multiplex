@@ -62,9 +62,8 @@ class Multiplex extends stream.Duplex {
     this._missing = 0
     this._message = null
 
-    const init = this.initiator ? ':initiator' : ':listener'
-    this.log = debug('mplex:main:' + Math.floor(Math.random() * 100000) + init)
-    this.log('construction', new Error().stack)
+    this.log = debug('mplex:main:' + Math.floor(Math.random() * 100000))
+    this.log('construction')
 
     let bufSize = 100
     if (this.limit) {
@@ -78,19 +77,15 @@ class Multiplex extends stream.Duplex {
     this._finished = false
 
     this.once('finish', this._clear)
+
+    // setup id handling
+    this._nextId = this.initiator ? 0 : 1
   }
 
-  // Generate the next stream id based on the highest seen
-  // id so far. Initiator ids are always odd, receiver ids
-  // are always even.
+  // Generate the next stream id
   _nextStreamId ()/* : number */ {
-    let remoteMax = this._remote.length
-    let localMax = this._local.length
-    let id = Math.max(remoteMax, localMax)
-    if (this.initiator && id % 2 === 0) {
-      id++
-    }
-
+    let id = this._nextId
+    this._nextId += 2
     return id
   }
 
@@ -177,10 +172,6 @@ class Multiplex extends stream.Duplex {
 
   _addChannel (channel/* : Channel */, id/* : number */, list/* : Array<Channel|null> */)/* : Channel */ {
     this.log('_addChannel', id)
-    while (list.length <= id) {
-      list.push(null)
-    }
-
     list[id] = channel
     channel.on('finalize', () => {
       this.log('_remove channel', id)
@@ -300,10 +291,7 @@ class Multiplex extends stream.Duplex {
       return
     }
 
-    const stream = this._list[this._channel] ||
-      this._remote[this._channel] ||
-      this._local[this._channel]
-
+    const stream = this._list[this._channel]
     if (!stream) {
       return
     }
@@ -442,6 +430,7 @@ class Multiplex extends stream.Duplex {
   }
 
   _clear () {
+    this.log('_clear')
     if (this._finished) {
       return
     }
