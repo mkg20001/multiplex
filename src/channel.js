@@ -1,3 +1,4 @@
+'use strict'
 /* @flow */
 
 const EventEmitter = require('events').EventEmitter

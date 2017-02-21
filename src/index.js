@@ -1,3 +1,4 @@
+'use strict'
 /* @flow */
 
 const stream = require('readable-stream')
