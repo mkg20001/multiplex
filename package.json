@@ -14,18 +14,18 @@
   "author": "max ogden",
   "license": "BSD 2-Clause",
   "dependencies": {
-    "debug": "^2.6.1",
-    "duplexify": "^3.4.2",
-    "readable-stream": "^2.0.2",
-    "varint": "^4.0.0"
+    "debug": "^3.0.1",
+    "duplexify": "^3.5.1",
+    "readable-stream": "^2.3.3",
+    "varint": "^5.0.0"
   },
   "devDependencies": {
     "chunky": "0.0.0",
-    "concat-stream": "^1.4.8",
+    "concat-stream": "^1.6.0",
     "pump": "^1.0.2",
-    "standard": "^8.6.0",
-    "tape": "^4.0.0",
-    "through2": "^0.6.5"
+    "standard": "^10.0.3",
+    "tape": "^4.8.0",
+    "through2": "^2.0.3"
   },
   "repository": {
     "type": "git",
