@@ -7,4 +7,6 @@ multiplex is only possible due to the excellent work of the following collaborat
 <tr><th align="left">mafintosh</th><td><a href="https://github.com/mafintosh">GitHub/mafintosh</a></td></tr>
 <tr><th align="left">diasdavid</th><td><a href="https://github.com/diasdavid">GitHub/diasdavid</a></td></tr>
 <tr><th align="left">1N50MN14</th><td><a href="https://github.com/1N50MN14">GitHub/1N50MN14</a></td></tr>
+<tr><th align="left">dignifiedquire</th><td><a href="https://github.com/dignifiedquire">GitHub/dignifiedquire</a></td></tr>
+<tr><th align="left">mkg20001</th><td><a href="https://github.com/mkg20001">GitHub/mkg20001</a></td></tr>
 </tbody></table>
