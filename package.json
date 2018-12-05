@@ -17,7 +17,7 @@
   "author": "max ogden",
   "license": "BSD 2-Clause",
   "dependencies": {
-    "debug": "^3.0.1",
+    "debug": "^3.1.0",
     "duplexify": "^3.5.1",
     "readable-stream": "^2.3.3",
     "varint": "^5.0.0"
